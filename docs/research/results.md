@@ -1,53 +1,89 @@
-# Results
+﻿# Experimental Results
 
-## E002 — Step Scaling
+Studio NST evaluates three neural style transfer approaches: optimization-based Neural Style Transfer, feed-forward transformation, and Adaptive Instance Normalization.
 
-E002 measured the effect of increasing the optimization budget from 100 to 300 to 500 steps.
+All measurements below are from experiments actually executed in the project environment.
 
-At 100 steps, the run took 5.0686 seconds and finished with a content loss of 10.795232. At 300 steps, runtime increased to 13.5208 seconds while the content loss fell to 9.615572. At 500 steps, runtime reached 22.5941 seconds and the content loss fell further to 9.292706.
+## Hardware
 
-The measured style loss followed the same downward direction:
+- GPU: NVIDIA GeForce GTX 1650
+- GPU memory: 4 GB
+- CUDA runtime: 13.0
+- PyTorch: 2.14.0+cu130
+- Python: 3.14
+- Operating system: Windows
 
-- 100 steps: `7.127049e-06`
-- 300 steps: `5.248773e-06`
-- 500 steps: `4.966042e-06`
+## Gatys — Step Scaling
 
-The main pattern is that more optimization steps continued to reduce the measured losses, while the size of the content-loss improvement became smaller between successive settings. Runtime, on the other hand, continued to increase with the step count.
+The same content/style pair was processed at 256 pixels using different optimization step counts.
 
-Peak GPU memory remained close to 264 MB for all three runs. This suggests that, at the tested 256 px resolution, increasing the number of optimization steps affected compute time much more than peak memory usage.
+| Steps | Runtime | Peak GPU Memory | Final Content Loss | Final Style Loss |
+|---:|---:|---:|---:|---:|
+| 100 | 5.0686 s | 264.57 MB | 10.795232 | 7.127049e-06 |
+| 300 | 13.5208 s | 263.63 MB | 9.615572 | 5.248773e-06 |
+| 500 | 22.5941 s | 263.63 MB | 9.292706 | 4.966042e-06 |
 
-The results are specific to the current implementation, images, resolution, and GTX 1650 hardware.
+Runtime increased substantially as the optimization budget increased. The measured content loss continued to decrease, although the improvement became smaller as additional optimization steps were added.
 
-## E003 — Resolution Scaling
+These values describe the specific experiment and should not be interpreted as universal performance characteristics.
 
-E003 kept the optimization budget fixed at 300 steps and changed the maximum image resolution from 256 px to 384 px and then 512 px.
+## Gatys — Resolution Scaling
 
-Runtime increased from 14.1449 seconds at 256 px to 29.0578 seconds at 384 px and 53.6524 seconds at 512 px. Peak GPU memory increased at the same time, from 264.57 MB to 451.32 MB and then 729.36 MB.
+The same content/style pair was processed for 300 optimization steps at three resolutions.
 
-The recorded content loss decreased across the three runs:
+| Resolution | Runtime | Peak GPU Memory | Content Loss | Style Loss |
+|---:|---:|---:|---:|---:|
+| 256 px | 14.1449 s | 264.57 MB | 9.591365 | 5.511013e-06 |
+| 384 px | 29.0578 s | 451.32 MB | 6.550163 | 2.810368e-06 |
+| 512 px | 53.6524 s | 729.36 MB | 5.367336 | 2.035976e-06 |
 
-```text
-256 px  9.591365
-384 px  6.550163
-512 px  5.367336
-```
+Increasing resolution increased both runtime and peak GPU memory. The lower measured losses at higher resolutions are reported as optimization metrics only and are not treated as direct perceptual quality scores.
 
-The recorded style loss also decreased:
+## Johnson — Training Validation
 
-```text
-256 px  5.511013e-06
-384 px  2.810368e-06
-512 px  2.035976e-06
-```
+The feed-forward transformation network was trained on a limited 200-image CIFAR-10 subset.
 
-The most direct engineering observation is the cost of increasing resolution. Moving from 256 px to 512 px increased runtime by about 3.8 times and peak GPU memory by about 2.8 times in this setup.
+| Metric | Measured Result |
+|---|---:|
+| Training images | 200 |
+| Optimization steps | 50 |
+| Runtime | 6.15 s |
+| Initial total loss | 325.259888 |
+| Final total loss | 101.421913 |
+| Initial content loss | 9.104837 |
+| Final content loss | 8.196975 |
+| Initial style loss | 3.161550e-03 |
+| Final style loss | 9.322494e-04 |
 
-The lower losses at higher resolution are useful measurements, but they should not be treated as evidence of better visual quality without a separate image-quality evaluation. The next stages of Studio NST will therefore consider both computational measurements and visual results rather than relying on a single loss value.
+The checkpoint was successfully saved and loaded for inference.
 
-### Experimental note
+However, the generated result did not preserve the content structure sufficiently and did not provide satisfactory style transfer quality. The experiment is therefore treated as a training and inference pipeline validation rather than a successful final Johnson model.
 
-The 256 px E003 runtime was 14.1449 seconds, compared with 13.5208 seconds for the earlier 300-step 256 px E002 run. This small difference comes from separate executions of the same pipeline and does not change the resolution-scaling observation. E003 results are reported using the values recorded by the E003 benchmark itself.
+The primary limitation was the extremely small training dataset.
 
-### Next experiment
+## AdaIN — End-to-End Inference
 
-The next major stage is to implement a feed-forward style-transfer approach and compare it with the optimization-based Gatys pipeline. This changes the question from how much computation is needed for iterative optimization to how a trained transformation network behaves at inference time.
+AdaIN was evaluated using the same project content/style pair at a maximum resolution of 512 pixels.
+
+| Metric | Measured Result |
+|---|---:|
+| Resolution | 512 px |
+| Alpha | 1.0 |
+| Runtime | 0.8758 s |
+| Peak GPU Memory | 147.68 MB |
+| Device | CUDA |
+| GPU | NVIDIA GeForce GTX 1650 |
+
+The generated image preserved the main structure of the content scene while transferring the visual statistics and painterly appearance of the style image.
+
+## Observations
+
+The three implementations demonstrate different computational approaches.
+
+Gatys performs iterative optimization directly on the generated image. This provides flexibility but requires repeated forward and backward passes. The resolution and step-scaling experiments show the associated computational cost.
+
+Johnson replaces per-image optimization with a learned feed-forward transformation network. Its inference architecture is substantially different from Gatys, but the quality of the trained model depends on the training process and dataset. The limited validation experiment in Studio NST was sufficient to verify the complete pipeline but not sufficient to establish high-quality transfer.
+
+AdaIN performs style transfer by aligning channel-wise feature statistics between content and style representations and reconstructing the result with a trained decoder. In the measured Studio NST run, inference completed in under one second at the tested 512-pixel setting.
+
+The measurements are hardware-, software-, configuration-, and image-dependent. They are intended to document the behavior of this implementation rather than provide universal rankings of the three methods.
