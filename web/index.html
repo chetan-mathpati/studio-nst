@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Studio NST</title>
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<header class="nav">
+  <div class="brand">STUDIO NST</div>
+  <nav>
+    <button class="nav-btn active" data-view="studio">Studio</button>
+    <button class="nav-btn" data-view="lab">Lab</button>
+  </nav>
+  <div class="status"><span></span> Local</div>
+</header>
+
+<main>
+<section id="studio" class="view active">
+  <div class="intro shell">
+    <p class="eyebrow">NEURAL STYLE TRANSFER</p>
+    <h1>Make it<br><em>yours.</em></h1>
+    <p class="lede">Choose an image, choose a visual language, then decide how the transfer should behave.</p>
+  </div>
+
+  <div class="shell workspace">
+    <section class="library-section">
+      <div class="section-head">
+        <div><span class="label">CHOOSE YOUR MATERIALS</span><span class="section-desc">Start with a content image and a style reference.</span></div>
+        <button class="upload-link" id="resetLibrary">Clear selection</button>
+      </div>
+
+      <div class="library-block">
+        <div class="library-head"><span class="library-title">CONTENT</span><span class="library-note">The structure to preserve</span></div>
+        <div class="library-grid content-grid" id="contentLibrary"></div>
+      </div>
+
+      <div class="library-block style-block">
+        <div class="library-head"><span class="library-title">STYLE</span><span class="library-note">The visual language to borrow</span></div>
+        <div class="library-grid style-grid" id="styleLibrary"></div>
+      </div>
+    </section>
+
+    <section class="inputs">
+      <label class="drop" id="contentDrop">
+        <input id="content" type="file" accept="image/*">
+        <span class="label">CONTENT</span>
+        <strong id="contentTitle">Upload your own</strong>
+        <small>Click anywhere to choose an image</small>
+        <img id="contentPreview" alt="Content preview">
+      </label>
+      <label class="drop" id="styleDrop">
+        <input id="style" type="file" accept="image/*">
+        <span class="label">STYLE</span>
+        <strong id="styleTitle">Upload your own</strong>
+        <small>Painting, texture, drawing or photograph</small>
+        <img id="stylePreview" alt="Style preview">
+      </label>
+    </section>
+
+    <section class="controls">
+      <div class="control-group method-group">
+        <div class="control-head"><span>METHOD</span><span id="methodText">Transfer style through adaptive feature statistics.</span></div>
+        <div class="segmented">
+          <button class="method" data-method="gatys">Gatys</button>
+          <button class="method active" data-method="adain">AdaIN</button>
+          <button class="method" data-method="johnson">Johnson</button>
+        </div>
+      </div>
+      <div class="control-group">
+        <div class="control-head"><span>RESOLUTION</span><span id="resolutionValue">512 px</span></div>
+        <input id="resolution" type="range" min="256" max="512" step="128" value="512">
+      </div>
+      <div class="control-group" id="alphaControl">
+        <div class="control-head"><span>STYLE STRENGTH</span><span id="alphaValue">100%</span></div>
+        <input id="alpha" type="range" min="0" max="1" step="0.05" value="1">
+      </div>
+      <div class="control-group hidden" id="stepsControl">
+        <div class="control-head"><span>GATYS ITERATIONS</span><span id="stepsValue">300</span></div>
+        <input id="steps" type="range" min="100" max="500" step="100" value="300">
+      </div>
+      <button class="generate" id="generate" disabled><span>Choose content and style</span><span>→</span></button>
+    </section>
+
+    <p class="source-note">Style and content references from the public AI-NST repository are optional examples.</p>
+  </div>
+
+  <section id="result" class="shell result hidden">
+    <div class="result-head"><div><span class="eyebrow">RESULT</span><h2 id="resultMethod">AdaIN</h2></div><div class="metrics" id="metrics"></div></div>
+    <div class="result-frame"><img id="resultImage" alt="Stylized result"></div>
+    <div class="result-actions"><button id="compareBtn">Compare</button><button id="saveBtn">Save result</button><button id="newBtn">New experiment</button></div>
+  </section>
+
+  <section id="compare" class="shell compare hidden">
+    <div class="compare-head"><span class="eyebrow">COMPARE</span><button id="closeCompare">Close</button></div>
+    <div class="compare-frame"><img id="compareOriginal" alt="Original"><div class="compare-after"><img id="compareResult" alt="Result"></div><span class="compare-label original-label">ORIGINAL</span><span class="compare-label result-label">RESULT</span><input id="compareSlider" type="range" min="0" max="100" value="50"></div>
+  </section>
+</section>
+
+<section id="lab" class="view">
+  <div class="lab-head shell">
+    <p class="eyebrow">LABORATORY</p>
+    <h1>Understand<br><em>the machine.</em></h1>
+    <p class="lede">The implementation, experiments and measurements behind Studio NST.</p>
+  </div>
+
+  <section class="shell lab-section">
+    <div class="section-head"><div><span class="label">METHODS</span><span class="section-desc">Three different answers to the same problem.</span></div></div>
+    <div class="lab-grid">
+      <article><span>01</span><h3>Gatys</h3><p>Optimizes the generated image against content features and style Gram matrices.</p></article>
+      <article><span>02</span><h3>Johnson</h3><p>Uses a learned feed-forward transformation network for fast inference.</p></article>
+      <article><span>03</span><h3>AdaIN</h3><p>Aligns channel-wise feature statistics before decoding the stylized image.</p></article>
+    </div>
+  </section>
+
+  <section class="shell lab-section">
+    <div class="section-head"><div><span class="label">ARCHITECTURE</span><span class="section-desc">Inference boundary between browser and PyTorch.</span></div></div>
+    <div class="architecture"><span>CONTENT</span><b>→</b><span>VGG19<br><small>FEATURE SPACE</small></span><b>→</b><span>GATYS / JOHNSON / ADAIN</span><b>→</b><span>RESULT</span></div>
+  </section>
+
+  <section class="shell lab-section">
+    <div class="section-head"><div><span class="label">BENCHMARKS</span><span class="section-desc">Measured on the local GTX 1650 experiment machine.</span></div></div>
+
+    <div class="benchmark-title">Gatys · step scaling</div>
+    <div class="benchmark">
+      <div class="bench-row head"><span>Steps</span><span>Runtime</span><span>Peak VRAM</span><span>Content loss</span></div>
+      <div class="bench-row"><span>100</span><span>5.07 s</span><span>264.57 MB</span><span>10.7952</span></div>
+      <div class="bench-row"><span>300</span><span>13.52 s</span><span>263.63 MB</span><span>9.6156</span></div>
+      <div class="bench-row"><span>500</span><span>22.59 s</span><span>263.63 MB</span><span>9.2927</span></div>
+    </div>
+
+    <div class="benchmark-title second">Gatys · resolution scaling</div>
+    <div class="benchmark">
+      <div class="bench-row head"><span>Resolution</span><span>Runtime</span><span>Peak VRAM</span><span>Content loss</span></div>
+      <div class="bench-row"><span>256 px</span><span>14.14 s</span><span>264.57 MB</span><span>9.5914</span></div>
+      <div class="bench-row"><span>384 px</span><span>29.06 s</span><span>451.32 MB</span><span>6.5502</span></div>
+      <div class="bench-row"><span>512 px</span><span>53.65 s</span><span>729.36 MB</span><span>5.3673</span></div>
+    </div>
+
+    <div class="benchmark-title second">AdaIN · style strength</div>
+    <div class="benchmark">
+      <div class="bench-row head"><span>Alpha</span><span>Runtime</span><span>Peak VRAM</span></div>
+      <div class="bench-row"><span>0.00</span><span>0.4021 s</span><span>147.68 MB</span></div>
+      <div class="bench-row"><span>0.25</span><span>0.2863 s</span><span>147.68 MB</span></div>
+      <div class="bench-row"><span>0.50</span><span>0.2627 s</span><span>147.68 MB</span></div>
+      <div class="bench-row"><span>0.75</span><span>0.2944 s</span><span>147.68 MB</span></div>
+      <div class="bench-row"><span>1.00</span><span>0.2566 s</span><span>147.68 MB</span></div>
+    </div>
+
+    <p class="lab-footnote">These are measured project runs, not universal performance claims. Loss values are optimization metrics, not perceptual quality scores. AdaIN runtime variation reflects single-run measurements at each alpha value.</p>
+  </section>
+
+  <section class="shell lab-section">
+    <div class="section-head"><div><span class="label">RESEARCH NOTE</span><span class="section-desc">What the current evidence says.</span></div></div>
+    <div class="research-note">
+      <p><strong>AdaIN</strong> produced a usable stylized result in the current local setup at 512 px, with a measured runtime of 0.8758 s and 147.68 MB peak GPU memory.</p>
+      <p><strong>AdaIN style strength</strong> was tested at five alpha values from 0.00 to 1.00. Peak GPU memory remained constant at 147.68 MB across the tested values, while measured runtime ranged from 0.2566 s to 0.4021 s.</p>
+      <p><strong>Johnson</strong> is wired end-to-end, but its current checkpoint was trained only as a pipeline validation run on 200 CIFAR-10 images, so its output is documented as a limitation rather than presented as a quality result.</p>
+    </div>
+  </section>
+
+  <section class="lab-note shell">
+    <span class="label">SYSTEM</span>
+    <p>Runs locally through the project's existing PyTorch implementations. No cloud inference, account or external API is required.</p>
+  </section>
+</section>
+</main>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
